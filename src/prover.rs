@@ -110,6 +110,10 @@ impl Prover {
     }
 
     pub fn handshake6_set_eta(&mut self, omega: P256, varepsilon2: P256) {
+        if omega == P256::new(0).unwrap() {
+            panic!("omega is 0");
+        }
+
         let omega_inv = omega.inverse();
         let a1 = self.a1.unwrap();
         let c1_prime = self.c1_prime.unwrap();
