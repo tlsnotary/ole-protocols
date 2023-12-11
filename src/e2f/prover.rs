@@ -7,34 +7,34 @@ use rand::thread_rng;
 #[derive(Debug, Default)]
 pub struct Prover {
     // Preprocess 1
-    a1: Option<P256>,
-    b1: Option<P256>,
-    b1_prime: Option<P256>,
-    r1: Option<P256>,
+    pub(crate) a1: Option<P256>,
+    pub(crate) b1: Option<P256>,
+    pub(crate) b1_prime: Option<P256>,
+    pub(crate) r1: Option<P256>,
 
     // Preprocess 2
-    a1_b2_share: Option<P256>,
-    a2_b1_share: Option<P256>,
-    a1_b2_prime_share: Option<P256>,
-    a2_b1_prime_share: Option<P256>,
-    r1_r2_share: Option<P256>,
+    pub(crate) a1_b2_share: Option<P256>,
+    pub(crate) a2_b1_share: Option<P256>,
+    pub(crate) a1_b2_prime_share: Option<P256>,
+    pub(crate) a2_b1_prime_share: Option<P256>,
+    pub(crate) r1_r2_share: Option<P256>,
 
     // Preprocess 3
-    c1: Option<P256>,
-    c1_prime: Option<P256>,
+    pub(crate) c1: Option<P256>,
+    pub(crate) c1_prime: Option<P256>,
 
     // Preprocess 4
-    r_squared_share: Option<P256>,
+    pub(crate) r_squared_share: Option<P256>,
 
     // Handshake 5
-    ec_point: Option<(P256, P256)>,
-    omega_share: Option<P256>,
+    pub(crate) ec_point: Option<(P256, P256)>,
+    pub(crate) omega_share: Option<P256>,
 
     // Handshake 6
-    eta_share: Option<P256>,
+    pub(crate) eta_share: Option<P256>,
 
     // Handshake 7
-    z1: Option<P256>,
+    pub(crate) z1: Option<P256>,
 }
 
 impl Prover {

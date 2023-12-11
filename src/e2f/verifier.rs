@@ -7,34 +7,34 @@ use rand::thread_rng;
 #[derive(Debug, Default)]
 pub struct Verifier {
     // Preprocess 1
-    a2: Option<P256>,
-    b2: Option<P256>,
-    b2_prime: Option<P256>,
-    r2: Option<P256>,
+    pub(crate) a2: Option<P256>,
+    pub(crate) b2: Option<P256>,
+    pub(crate) b2_prime: Option<P256>,
+    pub(crate) r2: Option<P256>,
 
     // Preprocess 2
-    a1_b2_share: Option<P256>,
-    a2_b1_share: Option<P256>,
-    a1_b2_prime_share: Option<P256>,
-    a2_b1_prime_share: Option<P256>,
-    r1_r2_share: Option<P256>,
+    pub(crate) a1_b2_share: Option<P256>,
+    pub(crate) a2_b1_share: Option<P256>,
+    pub(crate) a1_b2_prime_share: Option<P256>,
+    pub(crate) a2_b1_prime_share: Option<P256>,
+    pub(crate) r1_r2_share: Option<P256>,
 
     // Preprocess 3
-    c2: Option<P256>,
-    c2_prime: Option<P256>,
+    pub(crate) c2: Option<P256>,
+    pub(crate) c2_prime: Option<P256>,
 
     // Preprocess 4
-    r_squared_share: Option<P256>,
+    pub(crate) r_squared_share: Option<P256>,
 
     // Handshake 5
-    ec_point: Option<(P256, P256)>,
-    omega_share: Option<P256>,
+    pub(crate) ec_point: Option<(P256, P256)>,
+    pub(crate) omega_share: Option<P256>,
 
     // Handshake 6
-    eta_share: Option<P256>,
+    pub(crate) eta_share: Option<P256>,
 
     // Handshake 7
-    z2: Option<P256>,
+    pub(crate) z2: Option<P256>,
 }
 
 impl Verifier {
@@ -131,7 +131,7 @@ impl Verifier {
         let r_squared_share = self.r_squared_share.unwrap();
         let x2 = self.ec_point.unwrap().0;
 
-        self.z2 = Some(varepsilon3 * varepsilon3 + two * varepsilon3 * r2 + r_squared_share + -x2);
+        self.z2 = Some(two * varepsilon3 * r2 + r_squared_share + -x2);
     }
 
     pub fn handshake8_z2_open(&self) -> P256 {
