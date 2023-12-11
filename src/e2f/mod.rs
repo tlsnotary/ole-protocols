@@ -10,18 +10,20 @@ pub use verifier::Verifier;
 mod tests {
     use super::{Prover, Verifier};
     use crate::ole::Ole;
-    use mpz_share_conversion_core::{
-        fields::{p256::P256, UniformRand},
-        Field,
-    };
+    use mpz_share_conversion_core::{fields::p256::P256, Field};
+    use p256::elliptic_curve::sec1::ToEncodedPoint;
+    use p256::{EncodedPoint, NonZeroScalar, PublicKey};
     use rand::thread_rng;
 
     #[test]
     fn test_e2f() {
         // Initialize
         let mut rng = thread_rng();
-        let prover_ec = (P256::rand(&mut rng), P256::rand(&mut rng));
-        let verifier_ec = (P256::rand(&mut rng), P256::rand(&mut rng));
+        let prover_scalar = p256::NonZeroScalar::random(&mut rng);
+        let verifier_scalar = p256::NonZeroScalar::random(&mut rng);
+
+        let prover_ec = point_to_p256(scalar_to_encoded_point(prover_scalar));
+        let verifier_ec = point_to_p256(scalar_to_encoded_point(verifier_scalar));
 
         let mut ole = Ole::default();
         let mut prover = Prover::default();
@@ -76,17 +78,58 @@ mod tests {
         let z1 = prover.handshake8_z1_open();
         let z2 = verifier.handshake8_z2_open();
 
-        let x_ec_combined = z1 + z2;
-        let x_ec_expected = {
-            let nominator = prover_ec.1 + -verifier_ec.1;
-            let denominator = prover_ec.0 + -verifier_ec.0;
+        let x_ec_expected = add_ec_points(prover_ec, verifier_ec);
+        assert_eq!(z1 + z2, x_ec_expected.0);
+    }
 
-            let fraction = nominator * denominator.inverse();
-            let squared = fraction * fraction;
+    #[test]
+    fn test_add_ec_points() {
+        let mut rng = thread_rng();
+        let scalar1 = p256::NonZeroScalar::random(&mut rng);
+        let scalar2 = p256::NonZeroScalar::random(&mut rng);
 
-            squared + -prover_ec.0 + -verifier_ec.0
-        };
+        let pk1 = PublicKey::from_secret_scalar(&scalar1);
+        let pk2 = PublicKey::from_secret_scalar(&scalar2);
+        let pr1 = pk1.to_projective();
+        let pr2 = pk2.to_projective();
 
-        assert_eq!(x_ec_combined, x_ec_expected);
+        let ec_added_expected = point_to_p256((pr1 + pr2).to_affine().to_encoded_point(false));
+
+        let ec1 = pr1.to_affine().to_encoded_point(false);
+        let ec2 = pr2.to_affine().to_encoded_point(false);
+        let ec_added = add_ec_points(point_to_p256(ec1), point_to_p256(ec2));
+
+        assert_eq!(ec_added, ec_added_expected);
+    }
+
+    fn add_ec_points((x1, y1): (P256, P256), (x2, y2): (P256, P256)) -> (P256, P256) {
+        let nominator = y2 + -y1;
+        let denominator = x2 + -x1;
+
+        let fraction = nominator * denominator.inverse();
+        let squared = fraction * fraction;
+
+        let x_r = squared + -x1 + -x2;
+        let y_r = fraction * (x1 + -x_r) + -y1;
+
+        (x_r, y_r)
+    }
+
+    fn scalar_to_encoded_point(scalar: NonZeroScalar) -> EncodedPoint {
+        PublicKey::from_secret_scalar(&scalar).to_encoded_point(false)
+    }
+
+    fn point_to_p256(point: EncodedPoint) -> (P256, P256) {
+        let mut x: [u8; 32] = (*point.x().unwrap()).into();
+        let mut y: [u8; 32] = (*point.y().unwrap()).into();
+
+        // reverse to little endian
+        x.reverse();
+        y.reverse();
+
+        let x = P256::try_from(x).unwrap();
+        let y = P256::try_from(y).unwrap();
+
+        (x, y)
     }
 }
