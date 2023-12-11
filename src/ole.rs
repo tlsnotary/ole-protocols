@@ -55,3 +55,40 @@ pub enum Role {
     Sender,
     Receiver,
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_ole() {
+        let mut ole = Ole::default();
+        let mut rng = thread_rng();
+
+        let input_sender = vec![
+            P256::rand(&mut rng),
+            P256::rand(&mut rng),
+            P256::rand(&mut rng),
+        ];
+        let input_receiver = vec![
+            P256::rand(&mut rng),
+            P256::rand(&mut rng),
+            P256::rand(&mut rng),
+        ];
+
+        ole.input(Role::Sender, input_sender.clone());
+        ole.input(Role::Receiver, input_receiver.clone());
+
+        let output_sender = ole.output(Role::Sender);
+        let output_receiver = ole.output(Role::Receiver);
+
+        for (((is, ir), os), or) in input_sender
+            .into_iter()
+            .zip(input_receiver)
+            .zip(output_sender)
+            .zip(output_receiver)
+        {
+            assert_eq!(is * ir, os + or);
+        }
+    }
+}
