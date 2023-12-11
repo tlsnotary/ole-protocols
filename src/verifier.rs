@@ -1,7 +1,7 @@
 //! The verifier implementation
 
-use crate::{Ole, Role};
-use mpz_share_conversion_core::fields::{p256::P256, UniformRand};
+use crate::ole::{Ole, Role};
+use mpz_share_conversion_core::fields::{p256::P256, Field, UniformRand};
 use rand::thread_rng;
 
 #[derive(Debug, Default)]
@@ -29,6 +29,12 @@ pub struct Verifier {
     // Handshake 5
     ec_point: Option<(P256, P256)>,
     omega_share: Option<P256>,
+
+    // Handshake 6
+    eta_share: Option<P256>,
+
+    // Handshake 7
+    z2: Option<P256>,
 }
 
 impl Verifier {
@@ -93,5 +99,38 @@ impl Verifier {
 
     pub fn handshake5_set_omega(&mut self, varepsilon1: P256) {
         self.omega_share = Some(varepsilon1 * self.a2.unwrap() + self.c2.unwrap());
+    }
+
+    pub fn handshake6_omega_share_open(&self) -> P256 {
+        self.omega_share.unwrap()
+    }
+
+    pub fn handshake6_varepsilon2_share_open(&self) -> P256 {
+        self.ec_point.unwrap().1 + -self.b2_prime.unwrap()
+    }
+
+    pub fn handshake6_set_eta(&mut self, omega: P256, varepsilon2: P256) {
+        let omega_inv = omega.inverse();
+        let a2 = self.a2.unwrap();
+        let c2_prime = self.c2_prime.unwrap();
+
+        self.eta_share = Some(omega_inv * (varepsilon2 * a2 + c2_prime));
+    }
+
+    pub fn handshake7_varepsilon3_share_open(&self) -> P256 {
+        self.eta_share.unwrap() + -self.r2.unwrap()
+    }
+
+    pub fn handshake7_set_z1(&mut self, varepsilon3: P256) {
+        let two = P256::new(2).unwrap();
+        let r2 = self.r2.unwrap();
+        let r_squared_share = self.r_squared_share.unwrap();
+        let x2 = self.ec_point.unwrap().0;
+
+        self.z2 = Some(varepsilon3 * varepsilon3 + two * varepsilon3 * r2 + r_squared_share + -x2);
+    }
+
+    pub fn handshake8_z2_open(&self) -> P256 {
+        self.z2.unwrap()
     }
 }
