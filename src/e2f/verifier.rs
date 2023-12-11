@@ -125,7 +125,7 @@ impl Verifier {
         self.eta_share.unwrap() + -self.r2.unwrap()
     }
 
-    pub fn handshake7_set_z1(&mut self, varepsilon3: P256) {
+    pub fn handshake7_set_z2(&mut self, varepsilon3: P256) {
         let two = P256::new(2).unwrap();
         let r2 = self.r2.unwrap();
         let r_squared_share = self.r_squared_share.unwrap();

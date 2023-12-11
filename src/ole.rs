@@ -3,6 +3,7 @@
 use mpz_share_conversion_core::fields::{p256::P256, UniformRand};
 use rand::thread_rng;
 
+#[derive(Debug, Default)]
 pub struct Ole {
     input_sender: Vec<P256>,
     input_receiver: Vec<P256>,

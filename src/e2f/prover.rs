@@ -80,7 +80,7 @@ impl Prover {
         self.c1_prime = Some(a1_b1_prime_share + a1_b2_prime_share + a2_b1_prime_share);
     }
 
-    pub fn preproces4(&mut self) {
+    pub fn preprocess4(&mut self) {
         let r1_squared = self.r1.unwrap() * self.r1.unwrap();
 
         let two = P256::new(2).unwrap();
@@ -134,7 +134,7 @@ impl Prover {
         self.z1 = Some(varepsilon3 * varepsilon3 + two * varepsilon3 * r1 + r_squared_share + -x1);
     }
 
-    pub fn handshake8_z1_share_open(&self) -> P256 {
+    pub fn handshake8_z1_open(&self) -> P256 {
         self.z1.unwrap()
     }
 }
