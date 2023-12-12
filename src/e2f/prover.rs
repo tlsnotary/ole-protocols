@@ -47,7 +47,7 @@ impl Prover {
         self.r1 = Some(P256::rand(&mut rng));
     }
 
-    pub fn preprocess2_ole_input(&mut self, ole: &mut Ole) {
+    pub fn preprocess2_ole_input(&mut self, ole: &mut Ole<P256>) {
         let a1 = self.a1.unwrap();
         let b1 = self.b1.unwrap();
         let b1_prime = self.b1_prime.unwrap();
@@ -56,7 +56,7 @@ impl Prover {
         ole.input(Role::Sender, vec![a1, b1, a1, b1_prime, r1]);
     }
 
-    pub fn preprocess2_ole_output(&mut self, ole: &mut Ole) {
+    pub fn preprocess2_ole_output(&mut self, ole: &mut Ole<P256>) {
         let output = ole.output(Role::Sender);
 
         self.a1_b2_share = Some(output[0]);

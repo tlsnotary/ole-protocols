@@ -1,17 +1,27 @@
 //! This module implements an OLE functionality.
 
-use mpz_share_conversion_core::fields::{p256::P256, UniformRand};
+use mpz_share_conversion_core::Field;
 use rand::thread_rng;
 
-#[derive(Debug, Default)]
-pub struct Ole {
-    input_sender: Vec<P256>,
-    input_receiver: Vec<P256>,
-    output: Vec<P256>,
+#[derive(Debug)]
+pub struct Ole<T: Field> {
+    input_sender: Vec<T>,
+    input_receiver: Vec<T>,
+    output: Vec<T>,
 }
 
-impl Ole {
-    pub fn input(&mut self, role: Role, input: Vec<P256>) {
+impl<T: Field> Default for Ole<T> {
+    fn default() -> Self {
+        Self {
+            input_sender: vec![],
+            input_receiver: vec![],
+            output: vec![],
+        }
+    }
+}
+
+impl<T: Field> Ole<T> {
+    pub fn input(&mut self, role: Role, input: Vec<T>) {
         if role == Role::Sender {
             self.input_sender = input;
         } else {
@@ -19,7 +29,7 @@ impl Ole {
         }
     }
 
-    pub fn output(&mut self, role: Role) -> Vec<P256> {
+    pub fn output(&mut self, role: Role) -> Vec<T> {
         assert!(self.input_sender.len() == self.input_receiver.len());
 
         if !self.output.is_empty() {
@@ -31,7 +41,7 @@ impl Ole {
         let mut output_cached = vec![];
 
         for (s, r) in self.input_sender.iter().zip(self.input_receiver.iter()) {
-            let s_out = P256::rand(&mut rng);
+            let s_out = T::rand(&mut rng);
             let r_out = *s * *r + -s_out;
 
             if role == Role::Sender {
@@ -58,6 +68,8 @@ pub enum Role {
 
 #[cfg(test)]
 mod tests {
+    use mpz_share_conversion_core::fields::{p256::P256, UniformRand};
+
     use super::*;
 
     #[test]
