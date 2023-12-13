@@ -1,16 +1,19 @@
 use super::pascal_tri;
 use crate::ole::{Ole, Role};
-use mpz_share_conversion_core::fields::{compute_product_repeated, gf2_128::Gf2_128, UniformRand};
+use mpz_share_conversion_core::{
+    fields::{compute_product_repeated, gf2_128::Gf2_128, UniformRand},
+    Field,
+};
 use rand::thread_rng;
 
 #[derive(Debug)]
 pub struct Verifier {
-    block_num: usize,
-    h2: Gf2_128,
-    r2: Gf2_128,
-    bi: Vec<Gf2_128>,
-    d: Option<Gf2_128>,
-    hi: Vec<Gf2_128>,
+    pub(crate) block_num: usize,
+    pub(crate) h2: Gf2_128,
+    pub(crate) r2: Gf2_128,
+    pub(crate) bi: Vec<Gf2_128>,
+    pub(crate) d: Option<Gf2_128>,
+    pub(crate) hi: Vec<Gf2_128>,
 }
 
 impl Verifier {
@@ -48,15 +51,19 @@ impl Verifier {
     }
 
     pub fn handshake_a_set_hi(&mut self) {
-        let mut di = vec![Gf2_128::new(1)];
+        let mut di = vec![Gf2_128::one(), self.d.unwrap()];
         compute_product_repeated(&mut di, self.d.unwrap(), self.block_num);
 
         let pascal_tri = pascal_tri::<Gf2_128>(self.block_num);
 
-        for k in 0..self.block_num {
-            for el in pascal_tri[k].iter() {
-                self.hi.push(*el * di[k] * self.bi[self.block_num - k]);
-            }
+        for pascal_row in pascal_tri.iter() {
+            let h_pow_share = pascal_row
+                .iter()
+                .enumerate()
+                .fold(Gf2_128::new(0), |acc, (i, &el)| {
+                    acc + el * di[i] * self.bi[pascal_row.len() - 1 - i]
+                });
+            self.hi.push(h_pow_share);
         }
     }
 

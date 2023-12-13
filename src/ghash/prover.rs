@@ -1,16 +1,19 @@
 use super::pascal_tri;
 use crate::ole::{Ole, Role};
-use mpz_share_conversion_core::fields::{compute_product_repeated, gf2_128::Gf2_128, UniformRand};
+use mpz_share_conversion_core::{
+    fields::{compute_product_repeated, gf2_128::Gf2_128, UniformRand},
+    Field,
+};
 use rand::thread_rng;
 
 #[derive(Debug)]
 pub struct Prover {
-    block_num: usize,
-    h1: Gf2_128,
-    r1: Gf2_128,
-    ai: Vec<Gf2_128>,
-    d: Option<Gf2_128>,
-    hi: Vec<Gf2_128>,
+    pub(crate) block_num: usize,
+    pub(crate) h1: Gf2_128,
+    pub(crate) r1: Gf2_128,
+    pub(crate) ai: Vec<Gf2_128>,
+    pub(crate) d: Option<Gf2_128>,
+    pub(crate) hi: Vec<Gf2_128>,
 }
 
 impl Prover {
@@ -48,20 +51,24 @@ impl Prover {
     }
 
     pub fn handshake_a_set_hi(&mut self) {
-        let mut di = vec![Gf2_128::new(1)];
+        let mut di = vec![Gf2_128::one(), self.d.unwrap()];
         compute_product_repeated(&mut di, self.d.unwrap(), self.block_num);
 
         let pascal_tri = pascal_tri::<Gf2_128>(self.block_num);
 
-        for k in 0..self.block_num {
-            for el in pascal_tri[k].iter() {
-                self.hi.push(*el * di[k] * self.ai[self.block_num - k]);
-            }
+        for pascal_row in pascal_tri.iter() {
+            let h_pow_share = pascal_row
+                .iter()
+                .enumerate()
+                .fold(Gf2_128::new(0), |acc, (i, &el)| {
+                    acc + el * di[i] * self.ai[pascal_row.len() - 1 - i]
+                });
+            self.hi.push(h_pow_share);
         }
     }
 
     pub fn handshake_output_ghash(&self, blocks: &[Gf2_128]) -> Gf2_128 {
-        let mut res = Gf2_128::new(0);
+        let mut res = Gf2_128::zero();
 
         for (i, block) in blocks.iter().enumerate() {
             res = res + *block * self.hi[i];

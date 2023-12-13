@@ -9,10 +9,7 @@ pub use verifier::Verifier;
 
 use crate::ole::Ole;
 
-pub fn ghash(blocks: &[Gf2_128], h_prover: Gf2_128, h_verifier: Gf2_128) -> Gf2_128 {
-    let mut prover = Prover::new(blocks.len(), h_prover);
-    let mut verifier = Verifier::new(blocks.len(), h_verifier);
-
+pub fn ghash(blocks: &[Gf2_128], prover: &mut Prover, verifier: &mut Verifier) -> Gf2_128 {
     let mut ole = Ole::default();
 
     prover.preprocess_ole_input(&mut ole);
@@ -71,10 +68,13 @@ mod tests {
         let h2: Gf2_128 = Gf2_128::rand(&mut rng);
         let h = h1 + h2;
 
-        let ghash = ghash(&blocks, h1, h2);
+        let mut prover = Prover::new(blocks.len(), h1);
+        let mut verifier = Verifier::new(blocks.len(), h2);
+
+        let ghash = ghash(&blocks, &mut prover, &mut verifier);
 
         let ghash_expected = {
-            let mut hi = vec![Gf2_128::one(), h];
+            let mut hi = vec![h];
             compute_product_repeated(&mut hi, h, blocks.len());
 
             blocks
@@ -83,7 +83,24 @@ mod tests {
                 .fold(Gf2_128::zero(), |acc, (&b, &h)| acc + (b * h))
         };
 
-        assert_eq!(ghash.to_be_bytes(), ghash_expected.to_be_bytes());
+        assert_eq!(ghash, ghash_expected);
+    }
+
+    #[test]
+    fn test_ghash_invariants() {
+        let mut rng = thread_rng();
+        let blocks: Vec<Gf2_128> = (0..10).map(|_| Gf2_128::rand(&mut rng)).collect();
+
+        let h1: Gf2_128 = Gf2_128::rand(&mut rng);
+        let h2: Gf2_128 = Gf2_128::rand(&mut rng);
+
+        let mut prover = Prover::new(blocks.len(), h1);
+        let mut verifier = Verifier::new(blocks.len(), h2);
+
+        let _ = ghash(&blocks, &mut prover, &mut verifier);
+
+        assert_eq!(prover.h1, prover.hi[1]);
+        assert_eq!(verifier.h2, verifier.hi[1]);
     }
 
     #[test]
