@@ -9,5 +9,6 @@ edition = "2021"
 mpz-share-conversion-core = { git = "https://github.com/privacy-scaling-explorations/mpz" }
 p256 = { version = "0.13", features = ["arithmetic"] }
 rand = "0.8"
+ghash = "0.5"
 
 

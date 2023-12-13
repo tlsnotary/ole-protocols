@@ -3,19 +3,15 @@
 mod prover;
 mod verifier;
 
-use mpz_share_conversion_core::{
-    fields::{gf2_128::Gf2_128, UniformRand},
-    Field,
-};
+use mpz_share_conversion_core::{fields::gf2_128::Gf2_128, Field};
 pub use prover::Prover;
 pub use verifier::Verifier;
 
 use crate::ole::Ole;
 
-pub fn ghash(blocks: Vec<Gf2_128>) -> Gf2_128 {
-    let mut rng = rand::thread_rng();
-    let mut prover = Prover::new(blocks.len(), Gf2_128::rand(&mut rng));
-    let mut verifier = Verifier::new(blocks.len(), Gf2_128::rand(&mut rng));
+pub fn ghash(blocks: &[Gf2_128], h_prover: Gf2_128, h_verifier: Gf2_128) -> Gf2_128 {
+    let mut prover = Prover::new(blocks.len(), h_prover);
+    let mut verifier = Verifier::new(blocks.len(), h_verifier);
 
     let mut ole = Ole::default();
 
@@ -35,8 +31,8 @@ pub fn ghash(blocks: Vec<Gf2_128>) -> Gf2_128 {
     prover.handshake_a_set_hi();
     verifier.handshake_a_set_hi();
 
-    let ghash1 = prover.handshake_output_ghash(&blocks);
-    let ghash2 = verifier.handshake_output_ghash(&blocks);
+    let ghash1 = prover.handshake_output_ghash(blocks);
+    let ghash2 = verifier.handshake_output_ghash(blocks);
 
     ghash1 + ghash2
 }
@@ -63,11 +59,29 @@ fn pascal_tri<T: Field>(n: usize) -> Vec<Vec<T>> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use mpz_share_conversion_core::fields::p256::P256;
+    use ghash::{
+        universal_hash::{KeyInit, UniversalHash},
+        GHash,
+    };
+    use mpz_share_conversion_core::fields::{p256::P256, UniformRand};
+    use p256::elliptic_curve::generic_array::GenericArray;
+    use rand::thread_rng;
 
     #[test]
     fn test_ghash() {
-        todo!()
+        let mut rng = thread_rng();
+
+        // The Ghash key
+        let h1: Gf2_128 = Gf2_128::rand(&mut rng);
+        let h2: Gf2_128 = Gf2_128::rand(&mut rng);
+        let h = h1 + h2;
+
+        let blocks: Vec<Gf2_128> = (0..10).map(|_| Gf2_128::rand(&mut rng)).collect();
+
+        let ghash = ghash(&blocks, h1, h2);
+        let ghash_expected = ghash_reference_impl(h.to_inner().reverse_bits(), &blocks);
+
+        assert_eq!(ghash, ghash_expected);
     }
 
     #[test]
@@ -96,5 +110,18 @@ mod tests {
         assert_eq!(pascal[2], expected2);
         assert_eq!(pascal[3], expected3);
         assert_eq!(pascal[4], expected4);
+    }
+
+    fn ghash_reference_impl(h: u128, message: &[Gf2_128]) -> Gf2_128 {
+        let mut ghash = GHash::new(&h.to_be_bytes().into());
+        for el in message {
+            let block = GenericArray::clone_from_slice(&el.to_be_bytes());
+            ghash.update(&[block]);
+        }
+        let ghash_output = ghash.finalize();
+
+        Gf2_128::new(u128::from_be_bytes(
+            ghash_output.as_slice().try_into().unwrap(),
+        ))
     }
 }
