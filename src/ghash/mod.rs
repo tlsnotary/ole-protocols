@@ -59,29 +59,31 @@ fn pascal_tri<T: Field>(n: usize) -> Vec<Vec<T>> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use ghash::{
-        universal_hash::{KeyInit, UniversalHash},
-        GHash,
-    };
-    use mpz_share_conversion_core::fields::{p256::P256, UniformRand};
-    use p256::elliptic_curve::generic_array::GenericArray;
+    use mpz_share_conversion_core::fields::{compute_product_repeated, p256::P256, UniformRand};
     use rand::thread_rng;
 
     #[test]
     fn test_ghash() {
         let mut rng = thread_rng();
+        let blocks: Vec<Gf2_128> = (0..10).map(|_| Gf2_128::rand(&mut rng)).collect();
 
-        // The Ghash key
         let h1: Gf2_128 = Gf2_128::rand(&mut rng);
         let h2: Gf2_128 = Gf2_128::rand(&mut rng);
         let h = h1 + h2;
 
-        let blocks: Vec<Gf2_128> = (0..10).map(|_| Gf2_128::rand(&mut rng)).collect();
-
         let ghash = ghash(&blocks, h1, h2);
-        let ghash_expected = ghash_reference_impl(h.to_inner().reverse_bits(), &blocks);
 
-        assert_eq!(ghash, ghash_expected);
+        let ghash_expected = {
+            let mut hi = vec![Gf2_128::one(), h];
+            compute_product_repeated(&mut hi, h, blocks.len());
+
+            blocks
+                .iter()
+                .zip(hi.iter())
+                .fold(Gf2_128::zero(), |acc, (&b, &h)| acc + (b * h))
+        };
+
+        assert_eq!(ghash.to_be_bytes(), ghash_expected.to_be_bytes());
     }
 
     #[test]
@@ -110,18 +112,5 @@ mod tests {
         assert_eq!(pascal[2], expected2);
         assert_eq!(pascal[3], expected3);
         assert_eq!(pascal[4], expected4);
-    }
-
-    fn ghash_reference_impl(h: u128, message: &[Gf2_128]) -> Gf2_128 {
-        let mut ghash = GHash::new(&h.to_be_bytes().into());
-        for el in message {
-            let block = GenericArray::clone_from_slice(&el.to_be_bytes());
-            ghash.update(&[block]);
-        }
-        let ghash_output = ghash.finalize();
-
-        Gf2_128::new(u128::from_be_bytes(
-            ghash_output.as_slice().try_into().unwrap(),
-        ))
     }
 }
