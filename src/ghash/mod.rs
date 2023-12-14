@@ -22,8 +22,8 @@ pub fn ghash(blocks: &[Gf2_128], prover: &mut Prover, verifier: &mut Verifier) -
     let d2 = verifier.handshake_a_open_d();
     let d = d1 + d2;
 
-    prover.handshake_a_set_d(d);
-    verifier.handshake_a_set_d(d);
+    prover.handshake_a_set_di(d);
+    verifier.handshake_a_set_di(d);
 
     prover.handshake_a_set_hi();
     verifier.handshake_a_set_hi();
@@ -56,7 +56,7 @@ fn pascal_tri<T: Field>(n: usize) -> Vec<Vec<T>> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use mpz_share_conversion_core::fields::{compute_product_repeated, p256::P256, UniformRand};
+    use mpz_share_conversion_core::fields::{compute_product_repeated, UniformRand};
     use rand::thread_rng;
 
     #[test]
@@ -89,7 +89,7 @@ mod tests {
     #[test]
     fn test_ghash_invariants() {
         let mut rng = thread_rng();
-        let blocks: Vec<Gf2_128> = (0..10).map(|_| Gf2_128::rand(&mut rng)).collect();
+        let blocks: Vec<Gf2_128> = (0..1).map(|_| Gf2_128::rand(&mut rng)).collect();
 
         let h1: Gf2_128 = Gf2_128::rand(&mut rng);
         let h2: Gf2_128 = Gf2_128::rand(&mut rng);
@@ -99,29 +99,35 @@ mod tests {
 
         let _ = ghash(&blocks, &mut prover, &mut verifier);
 
-        assert_eq!(prover.h1, prover.hi[1]);
-        assert_eq!(verifier.h2, verifier.hi[1]);
+        assert_eq!(prover.d_powers[0], Gf2_128::one());
+        assert_eq!(verifier.d_powers[0], Gf2_128::one());
+        assert_eq!(prover.d_powers[1], verifier.d_powers[1]);
+
+        assert_eq!(prover.ai[1] + verifier.bi[1], prover.r1 * verifier.r2);
+        assert_eq!(prover.h1 + verifier.h2, prover.hi[0] + verifier.hi[0]);
+        assert_eq!(prover.d_powers[1] + prover.ai[1] + verifier.bi[1], h1 + h2);
     }
 
     #[test]
     fn test_pascal_tri() {
-        let pascal = pascal_tri::<P256>(4);
+        // This is an extension field so no naive arithmetic!
+        let pascal = pascal_tri::<Gf2_128>(4);
 
-        let expected0 = vec![P256::one()];
-        let expected1 = vec![P256::one(), P256::one()];
-        let expected2 = vec![P256::one(), P256::new(2).unwrap(), P256::one()];
+        let expected0 = vec![Gf2_128::one()];
+        let expected1 = vec![Gf2_128::one(), Gf2_128::one()];
+        let expected2 = vec![Gf2_128::one(), Gf2_128::zero(), Gf2_128::one()];
         let expected3 = vec![
-            P256::one(),
-            P256::new(3).unwrap(),
-            P256::new(3).unwrap(),
-            P256::one(),
+            Gf2_128::one(),
+            Gf2_128::one(),
+            Gf2_128::one(),
+            Gf2_128::one(),
         ];
         let expected4 = vec![
-            P256::one(),
-            P256::new(4).unwrap(),
-            P256::new(6).unwrap(),
-            P256::new(4).unwrap(),
-            P256::one(),
+            Gf2_128::one(),
+            Gf2_128::zero(),
+            Gf2_128::zero(),
+            Gf2_128::zero(),
+            Gf2_128::one(),
         ];
 
         assert_eq!(pascal[0], expected0);

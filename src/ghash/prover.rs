@@ -12,7 +12,7 @@ pub struct Prover {
     pub(crate) h1: Gf2_128,
     pub(crate) r1: Gf2_128,
     pub(crate) ai: Vec<Gf2_128>,
-    pub(crate) d: Option<Gf2_128>,
+    pub(crate) d_powers: Vec<Gf2_128>,
     pub(crate) hi: Vec<Gf2_128>,
 }
 
@@ -26,13 +26,13 @@ impl Prover {
             h1,
             r1,
             ai: vec![],
-            d: None,
+            d_powers: vec![],
             hi: vec![],
         }
     }
 
     pub fn preprocess_ole_input(&self, ole: &mut Ole<Gf2_128>) {
-        let mut r1_powers = vec![Gf2_128::new(1)];
+        let mut r1_powers = vec![Gf2_128::one()];
 
         compute_product_repeated(&mut r1_powers, self.r1, self.block_num);
         ole.input(Role::Sender, r1_powers)
@@ -43,25 +43,23 @@ impl Prover {
     }
 
     pub fn handshake_a_open_d(&self) -> Gf2_128 {
-        self.h1 + -self.r1
+        self.h1 + -self.ai[1]
     }
 
-    pub fn handshake_a_set_d(&mut self, d: Gf2_128) {
-        self.d = Some(d);
+    pub fn handshake_a_set_di(&mut self, d: Gf2_128) {
+        self.d_powers = vec![Gf2_128::one(), d];
+        compute_product_repeated(&mut self.d_powers, d, self.block_num);
     }
 
     pub fn handshake_a_set_hi(&mut self) {
-        let mut di = vec![Gf2_128::one(), self.d.unwrap()];
-        compute_product_repeated(&mut di, self.d.unwrap(), self.block_num);
-
         let pascal_tri = pascal_tri::<Gf2_128>(self.block_num);
 
-        for pascal_row in pascal_tri.iter() {
+        for pascal_row in pascal_tri.iter().skip(1) {
             let h_pow_share = pascal_row
                 .iter()
                 .enumerate()
                 .fold(Gf2_128::new(0), |acc, (i, &el)| {
-                    acc + el * di[i] * self.ai[pascal_row.len() - 1 - i]
+                    acc + el * self.d_powers[pascal_row.len() - 1 - i] * self.ai[i]
                 });
             self.hi.push(h_pow_share);
         }
