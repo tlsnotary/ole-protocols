@@ -584,6 +584,7 @@ dependencies = [
 name = "ole-protocols"
 version = "0.1.0"
 dependencies = [
+ "itybity",
  "mpz-share-conversion-core",
  "p256",
  "rand",
