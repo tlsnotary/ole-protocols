@@ -1,5 +1,6 @@
 //! This module implements an OLE functionality.
 
+use super::Role;
 use mpz_share_conversion_core::Field;
 use rand::thread_rng;
 
@@ -59,13 +60,6 @@ impl<T: Field> Ole<T> {
         output
     }
 }
-
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub enum Role {
-    Sender,
-    Receiver,
-}
-
 #[cfg(test)]
 mod tests {
     use mpz_share_conversion_core::fields::{p256::P256, UniformRand};

@@ -3,5 +3,5 @@
 
 pub mod e2f;
 mod f2;
-mod func;
+pub mod func;
 pub mod ghash;
