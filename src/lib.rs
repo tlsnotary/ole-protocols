@@ -2,5 +2,5 @@
 #![feature(iter_map_windows)]
 
 pub mod e2f;
+mod func;
 pub mod ghash;
-mod ole;

@@ -3,7 +3,7 @@
 mod prover;
 mod verifier;
 
-use crate::ole::Ole;
+use crate::func::ole::Ole;
 use mpz_share_conversion_core::fields::p256::P256;
 pub use prover::Prover;
 pub use verifier::Verifier;

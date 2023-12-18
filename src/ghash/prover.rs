@@ -1,5 +1,5 @@
 use super::pascal_tri;
-use crate::ole::{Ole, Role};
+use crate::func::ole::{Ole, Role};
 use mpz_share_conversion_core::{
     fields::{compute_product_repeated, gf2_128::Gf2_128, UniformRand},
     Field,

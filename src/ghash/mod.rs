@@ -3,11 +3,10 @@
 mod prover;
 mod verifier;
 
+use crate::func::ole::Ole;
 use mpz_share_conversion_core::{fields::gf2_128::Gf2_128, Field};
 pub use prover::Prover;
 pub use verifier::Verifier;
-
-use crate::ole::Ole;
 
 pub fn ghash(blocks: &[Gf2_128], prover: &mut Prover, verifier: &mut Verifier) -> Gf2_128 {
     let mut ole = Ole::default();

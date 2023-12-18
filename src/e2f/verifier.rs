@@ -1,6 +1,6 @@
 //! The verifier implementation
 
-use crate::ole::{Ole, Role};
+use crate::func::ole::{Ole, Role};
 use mpz_share_conversion_core::fields::{p256::P256, Field, UniformRand};
 use rand::thread_rng;
 
