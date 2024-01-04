@@ -1,6 +1,7 @@
 use super::pascal_tri;
 use crate::func::ole::Ole;
 use crate::func::Role;
+use delegate::delegate;
 use mpz_share_conversion_core::{
     fields::{compute_product_repeated, gf2_128::Gf2_128, UniformRand},
     Field,
@@ -73,5 +74,33 @@ impl Prover {
             res = res + *block * self.hi[i];
         }
         res
+    }
+}
+
+pub struct MaliciousProver {
+    pub inner: Prover,
+}
+
+impl MaliciousProver {
+    /// Create a new malicious prover, which wraps an inner prover, but sets r1 to 0.
+    pub fn new(block_num: usize, h1: Gf2_128) -> Self {
+        let mut prover = Self {
+            inner: Prover::new(block_num, h1),
+        };
+
+        prover.inner.r1 = Gf2_128::zero();
+        prover
+    }
+
+    delegate! {
+        to self.inner {
+            pub fn preprocess_ole_input(&self, ole: &mut Ole<Gf2_128>);
+            pub fn preprocess_ole_output(&mut self, ole: &mut Ole<Gf2_128>);
+            pub fn handshake_a_open_d(&self) -> Gf2_128;
+            pub fn handshake_a_set_di(&mut self, d: Gf2_128);
+            pub fn handshake_a_set_hi(&mut self);
+            pub fn handshake_output_ghash(&self, blocks: &[Gf2_128]) -> Gf2_128;
+        }
+
     }
 }

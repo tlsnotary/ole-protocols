@@ -10,6 +10,7 @@ mpz-share-conversion-core = { git = "https://github.com/privacy-scaling-explorat
 p256 = { version = "0.13", features = ["arithmetic"] }
 itybity = "0.2"
 rand = "0.8"
+delegate = "0.12"
 
 
 
